@@ -28,38 +28,31 @@ ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 """
-UPLOAD FILES
-photos from webapp, videos from magic leap
-{datatype: [photo, video], file: <file>}
+UPLOAD PHOTO
 """
-@app.route('/upload', methods=["POST"])
-def upload():
+@app.route('/upload-photo', methods=["POST"])
+def upload_photo():
     
     print("\nupload endpoint hit.")
 
-#     data = request.get_json()
-    data = request.form['file']
+    data = request.get_json()
     print("got file")
-    return "Done"
-#     datatype = data["datatype"] 
+    imageUrl = data["imageUrl"] 
+    name = data["name"]
+    # print("imageUrl: ", imageUrl, "name: ", name)
+    upload_path = f"photos/{name}.jpg"
+    file_source = f"uploads/{upload_path}"
+    with open(file_source, "wb") as fh:
+        fh.write(imageUrl.decode('base64'))
     
-#     # save file to local
-#     file = request.files['file'] 
-#     print("debug: ", file)
-#     filename = secure_filename(file.filename)
-#     target=os.path.join(UPLOAD_FOLDER,f'{datatype}s')
-#     destination="/".join([target, filename])
-#     file.save(destination)
-#     session['uploadFilePath']=destination
-    
-#     # save file to s3
-# #     current_time = time.strftime("%H-%M-%S", time.localtime())
-#     upload_path=f"uploads/{datatype}/{file.filename}"
-#     print(f"Uploading {file.filename} to {upload_path}...")
-#     s3.upload_file(file_source=f"/uploads/{file.filename}", upload_path={upload_path}, bucket="forever-videos")
-#     s3_url = "https://forever-videos.s3.us-east-1.amazonaws.com/" + upload_path
+    # save file to s3
+#     current_time = time.strftime("%H-%M-%S", time.localtime())
+    # upload_path=f"uploads/{datatype}/{filename}"
+    # print(f"Uploading {filename} to {upload_path}...")
+    s3.upload_file(file_source=file_source, upload_path=upload_path, bucket="forever-videos")
+    s3_url = "https://forever-videos.s3.us-east-1.amazonaws.com/" + upload_path
   
-#     return f"Uploaded at: {s3_url}, local path at: {destination}" 
+    return f"Uploaded at: {s3_url}, local path at: {file_source}" 
 
 
 def get_tag_clips(tag_timeline, tags):
@@ -67,6 +60,7 @@ def get_tag_clips(tag_timeline, tags):
     [{"start": time, "end": time}, {"start": time, "end": time}, ...]
     """
     tag_clips_status = {tag: False for tag in tags}
+    tag_clips = defaultdict()
     for i in tag_timeline.keys():
         for tag in tags:
             if tag in tag_timeline[i] and tag_clips_status[tag] == False:
@@ -109,11 +103,11 @@ def search():
     
     print("\nsearch endpoint hit.")
     data = request.get_json()
-    datatype = data["query"]
+    query = data["query"]
     caption_timeline = data["caption_timeline"]
     transcript_timeline = data["transcript_timeline"]
     
-    query_timeline = tags.get_timeline(caption_timeline, tags_timeline=starter_dict) # things assumed continuous unless interval > 5 frames
+    query_timeline = tags.get_timeline(caption_timeline, tags_timeline=caption_timeline) # things assumed continuous unless interval > 5 frames
 
     query_clips = get_tag_clips(query_timeline, query)
     
@@ -189,7 +183,7 @@ def batch_process():
     [{"start": time, "end": time}, {"start": time, "end": time}, ...]
     """
     
-    search_and_store_tags(caption_timeline, transcript_timeline)
+    # search_and_store_tags(caption_timeline, transcript_timeline)
     response = {
         # to save with video data
         "caption_timeline": caption_timeline,

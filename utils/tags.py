@@ -26,7 +26,7 @@ def get_tags(caption, transcript, tags):
     return tags_found
 
 def get_timeline(caption_timeline, transcript_timeline, tag_timeline, tags):
-    for i in tags_timeline.keys():
+    for i in tag_timeline.keys():
         tags = get_tags(caption_timeline[i], transcript_timeline[i], tags)
         tag_timeline[i] = tags
     return tag_timeline

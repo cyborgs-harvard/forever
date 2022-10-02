@@ -57,4 +57,4 @@ return a timeline in the form of:
 ...
 }
 """
-print(get_timeline("img_input", {0: "face", 1: "face", 2: "face"}))
+# print(get_timeline("img_input", {0: "face", 1: "face", 2: "face"}))
