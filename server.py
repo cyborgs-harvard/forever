@@ -117,32 +117,36 @@ BATCH PROCESS
 batch process videos at the end of a recording session for static labels
 {
 video_path: "video_path",
-faces: ["person_url", "person_url", "person_url"],
+faces: perosn1,person2,person3
 tags: ["tag", "tag", "tag"] (demo: conversations, objects)
 }
 """
-@app.route('/batch-process', methods=["POST"])
+
+# @app.route('/batch-process', methods=["POST"])
 def batch_process():
     
     print("\nbatch-process endpoint hit.")
-    data = request.get_json()
-    faces = ast.literal_eval(data["faces"]) # list of faces
+    data="alice,anphu"
+    tags="bottle,grass"
+    # data = request.get_json()
+    # print("data", data)
+
+    faces = [face.trim() for face in data["faces"].split(",")]
     base_url = "https://forever-videos.s3.us-east-1.amazonaws.com/"
     faces_dict  = {face : base_url + "photos/" + face for face in faces}
     for face in faces_dict:
-
         img_data = requests.get(faces_dict[face]).content
-        with open(f'faces/{face}.jpg', 'wb') as handler:
+        with open(f'utils/faces/{face}.jpg', 'wb') as handler:
             handler.write(img_data)
 
-    tag = ast.literal_eval(data["tags"]) # list of tags
-    video_path = data["video_path"]
+    tag = [tag.trim() for tag in data["tags"].split(",")]
+    video_path = "/Users/phunguyen/coding/hackmit/forever/uploads/videos/testvideo.mov"
     
     # process into frames: https://superuser.com/questions/135117/how-to-extract-one-frame-of-a-video-every-n-seconds-to-an-image
-    interval = 4 # every four seconds
+    interval = 1 # every second
     rate = 1/interval
     os.system(f"ffmpeg -i {video_path} -r {rate} video_frames_dir/%d.png")
-    video_frames_dir = "video_frames_dir"
+    video_frames_dir = "utils/video_frames"
     
     """
     get timelines
@@ -171,9 +175,6 @@ def batch_process():
     print("caption_timeline: ", caption_timeline)
     transcript_timeline = transcript.get_timeline(video_path=video_path, transcript_timeline=starter_dict)
     print("transcript_timeline: ", transcript_timeline)
-
-    # for dev purposes:
-    transcript_timeline = starter_dict
                            
     tag_timeline = tags.get_timeline(caption_timeline=caption_timeline, transcript_timeline=transcript_timeline, tags_timeline=starter_dict) 
     print("tag_timeline: ", tag_timeline)
@@ -197,8 +198,10 @@ def batch_process():
     
     return response
 
+batch_process()
+
 # RUN SERVER
-if __name__ == '__main__':
-    print("*** Forever Server ***")
-    app.run(host='0.0.0.0', port=3000, threaded=True)
+# if __name__ == '__main__':
+#     print("*** Forever Server ***")
+#     app.run(host='0.0.0.0', port=3000, threaded=True)
    
