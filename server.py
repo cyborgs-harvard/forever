@@ -61,43 +61,64 @@ def upload():
 #     return f"Uploaded at: {s3_url}, local path at: {destination}" 
 
 
-def search_and_store_tags(caption_timeline, transcript_timeline, tags):
+def get_tag_clips(tag_timeline, tags):
     """
-    get tag clips
-    compare with embeddings from each caption + reward for direct matches
     [{"start": time, "end": time}, {"start": time, "end": time}, ...]
     """
-    # todo: fetch tags from db (tags = []), can be overlapping
-    # todo: implement tag clip function
-    tag_clips = {tag: [] for tag in tags}
-    last_tags = None
-    last_tag_start = 0
+    tag_clips_status = {tag: False for tag in tags}
     for i in tag_timeline.keys():
+        for tag in tags:
+            if tag in tag_timeline[i] and tag_clips_status[tag] == False:
+                tag_clips[face].append({"start": i, "end": None})
+                tag_clips_status[face] = True
+            elif tag not in tag_timeline[i] and tag_clips_status[face] == True:
+                tag_clips[face][-1]["end"] = i
+                tag_clips_status[face] = False 
+                
+    return tag_clips
 
-        current_tag = tag_timeline[i]
-        if current_tag != last_tag:
-            tag_clips[last_tag].append({"start": last_tag_start, "end": i-1})
-            last_tag_start = i
+def get_face_clips(face_timeline, faces):
+    """
+    {face: [{"start": time, "end": time}, {"start": time, "end": time}, ...], ...}
+    """
+    face_clips = {face: [] for face in faces}
+    last_face = None
+    last_face_start = 0
+    for i in face_timeline.keys():
+
+        current_face = face_timeline[i]
+        if current_face != last_face:
+            face_clips[last_face].append({"start": last_face_start, "end": i-1})
+            last_face_start = i
             
-        last_tag = current_tag
-    del tag_clips[None]
-    
-    search_tag(tag)
-    
-def search_tag()
-    
-    
+        last_face = current_face
+    del face_clips[None]
+    return face_clips
 
 """
 LIVE SEARCH
-{query: "query"}
+{
+query: "query",
+caption_timeline: caption_timeline,
+transcript_timeline: transcript_timeline,
+}
 """
 @app.route('/search', methods=["POST"])
 def search():
     
     print("\nsearch endpoint hit.")
     data = request.get_json()
-    datatype = data["query"] 
+    datatype = data["query"]
+    caption_timeline = data["caption_timeline"]
+    transcript_timeline = data["transcript_timeline"]
+    
+    query_timeline = tags.get_timeline(caption_timeline, tags_timeline=starter_dict) # things assumed continuous unless interval > 5 frames
+
+    query_clips = get_tag_clips(query_timeline, query)
+    
+    response = {
+        "query_clips": query_clips
+    }
 
     return response
 
@@ -120,7 +141,10 @@ def batch_process():
     video_path = data["video_path"]
     
     # process into frames: https://superuser.com/questions/135117/how-to-extract-one-frame-of-a-video-every-n-seconds-to-an-image
-    video_frames_dir = # implement function
+    interval = 4 # every four seconds
+    rate = 1/interval
+    os.system(f"ffmpeg -i {video_path} -r {rate} video_frames_dir/%d.png")
+    video_frames_dir = "video_frames_dir"
     
     """
     get timelines
@@ -141,46 +165,23 @@ def batch_process():
     """
 
     clip = VideoFileClip(video_path)
-    starter_dict = {i : None for i in range(math.floor(clip.duration))
+    starter_dict = {i : None for i in range(math.floor(clip.duration))}
         
-    face_timeline = faces.get_timeline(video_frames_dir, face_timeline=starter_dict)
-    caption_timeline = caption.get_timeline(video_frames_dir,face_timeline=starter_dict)
-    transcript_timeline = transcript.get_timeline(video_path, transcript_timeline=starter_dict)
-    # interpret tag timeline
-    tag_timeline = tags.get_timeline(caption_timeline, tags_timeline=starter_dict) # things assumed continuous unless interval > 5 frames
-    
-    # get face clips
+    face_timeline = face.get_timeline(video_frames_dir=video_frames_dir, face_timeline=starter_dict)
+    print("face_timeline: ", face_timeline)
+    caption_timeline = caption.get_timeline(video_frames_dir=video_frames_dir,face_timeline=starter_dict)
+    print("caption_timeline: ", caption_timeline)
+    transcript_timeline = transcript.get_timeline(video_path=video_path, transcript_timeline=starter_dict)
+    print("transcript_timeline: ", transcript_timeline)
 
-#     face_clips = {face: [{"start": None, "end": None}] for face in faces}
-#     for i in face_timeline.keys():
-#         for face in faces:
-#             if face_timeline[i] == face and face_clips[face][-1]["start"] == None:
-#                 face_clips[face]["start"] = i
-#                 face_clips_status[face] = True
-#             elif face_timeline[i] != face and face_clips[face][-1]["end"] == None:
-#                 face_clips[face]["end"] = i
-# #                 face_clips[face].append({"start": None, "end": None})
+    # for dev purposes:
+    transcript_timeline = starter_dict
+                           
+    tag_timeline = tags.get_timeline(caption_timeline=caption_timeline, transcript_timeline=transcript_timeline, tags_timeline=starter_dict) 
+    print("tag_timeline: ", tag_timeline)
 
-#         for face in faces:
-#             if face_timeline[i] == face and face_clips_status[face] == False:
-#                 face_clips[face].append({"start": i, "end": None})
-#                 face_clips_status[face] = True
-#             elif face_timeline[i] != face and face_clips_status[face] == True:
-#                 face_clips[face][-1]["end"] = i
-#                 face_clips_status[face] = False   
-
-    face_clips = {face: [] for face in faces}
-    last_face = None
-    last_face_start = 0
-    for i in face_timeline.keys():
-
-        current_face = face_timeline[i]
-        if current_face != last_face:
-            face_clips[last_face].append({"start": last_face_start, "end": i-1})
-            last_face_start = i
-            
-        last_face = current_face
-    del face_clips[None]
+    face_clips = get_face_clips(face_timeline, faces)
+    tag_clips = get_tag_clips(tag_timeline, tags)
     
     """
     get conversation clips
@@ -188,6 +189,13 @@ def batch_process():
     """
     
     search_and_store_tags(caption_timeline, transcript_timeline)
+    response = {
+        # to save with video data
+        "caption_timeline": caption_timeline,
+        "transcript_timeline": transcript_timeline,
+        "face_clips": face_clips,
+        "tag_clips": tag_clips
+    }
     
     return response
 

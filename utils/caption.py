@@ -1,17 +1,3 @@
-# def caption_video():
-    
-#     print("\ncaption-video endpoint hit.")
-    
-#     """
-#     response in the form:
-#     {
-#     [0,10]: "caption",
-#     [10,20]: "caption",
-#     ...
-#     }
-#     """
-#     return response
-
 import os
 import requests
 import json
