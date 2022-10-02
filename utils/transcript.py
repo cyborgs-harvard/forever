@@ -45,7 +45,7 @@ def get_timeline(transcript_timeline):
         transcript_timeline[i] = transcript_words
     return transcript_timeline
 
-print(get_timeline({0: "face", 1: "face", 2: "face", 3: "face", 4: "face", 5: "face", 6: "face", 7: "face", 8: "face", 9: "face", 10: "face", 11: "face", 12: "face", 13: "face", 14: "face", 15: "face"}))
+# print(get_timeline({0: "face", 1: "face", 2: "face", 3: "face", 4: "face", 5: "face", 6: "face", 7: "face", 8: "face", 9: "face", 10: "face", 11: "face", 12: "face", 13: "face", 14: "face", 15: "face"}))
 
 
 def transcribe_file(job_name, file_uri, transcribe_client):

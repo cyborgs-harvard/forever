@@ -11,17 +11,11 @@ from moviepy.editor import VideoFileClip
 import math
 import ast
 import os
+import base64
+import requests
 
 app = Flask(__name__)
 CORS(app)
-
-# from http.server import HTTPServer, SimpleHTTPRequestHandler, test
-# import sys
-
-# class CORSRequestHandler (SimpleHTTPRequestHandler):
-#     def end_headers (self):
-#         self.send_header('Access-Control-Allow-Origin', '*')
-#         SimpleHTTPRequestHandler.end_headers(self)
 
 UPLOAD_FOLDER = '/uploads'
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
@@ -43,7 +37,8 @@ def upload_photo():
     upload_path = f"photos/{name}.jpg"
     file_source = f"uploads/{upload_path}"
     with open(file_source, "wb") as fh:
-        fh.write(imageUrl.decode('base64'))
+        imgdata = base64.b64decode(imageUrl)
+        fh.write(imgdata)
     
     # save file to s3
 #     current_time = time.strftime("%H-%M-%S", time.localtime())
@@ -132,6 +127,14 @@ def batch_process():
     print("\nbatch-process endpoint hit.")
     data = request.get_json()
     faces = ast.literal_eval(data["faces"]) # list of faces
+    base_url = "https://forever-videos.s3.us-east-1.amazonaws.com/"
+    faces_dict  = {face : base_url + "photos/" + face for face in faces}
+    for face in faces_dict:
+
+        img_data = requests.get(faces_dict[face]).content
+        with open(f'faces/{face}.jpg', 'wb') as handler:
+            handler.write(img_data)
+
     tag = ast.literal_eval(data["tags"]) # list of tags
     video_path = data["video_path"]
     
