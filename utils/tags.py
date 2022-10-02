@@ -15,17 +15,17 @@ def get_tags(caption, transcript, tags):
     tags_found = []
     caption_embedding = model(caption)[0]
     transcript_embedding = model(transcript)[0]
-    tag_embedings = model(tags)
-    for embedding in tag_embeddings:
+    tag_embeddings = model(tags)
+    for embedding, i in enumerate(tag_embeddings):
         caption_similarity = np.linalg.norm(np.array(embedding) - np.array(caption_embedding))
         transcript_similarity = np.linalg.norm(np.array(embedding) - np.array(caption_embedding))
         if caption_similarity or transcript_similarity > 0.7:
-            tags_found.append(tag)
+            tags_found.append(tags[i])
     # todo: implement length counterbalance
         
     return tags_found
 
-def get_timeline(caption_timeline, transcript_timeline, tags_timeline, tags):
+def get_timeline(caption_timeline, transcript_timeline, tag_timeline, tags):
     for i in tags_timeline.keys():
         tags = get_tags(caption_timeline[i], transcript_timeline[i], tags)
         tag_timeline[i] = tags

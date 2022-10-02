@@ -21,41 +21,17 @@ def upload_video(video_file, bucket):
     s3.meta.client.upload_file(Filename=f'{video_file}_{current_time}', Bucket=bucket, Key=upload_path)
 
 
-# # takes in a transcript 
-# def get_transcript_words(json_file):
-#     transcript = data['results']['transcripts'][0]['transcript']
-#     items = data['results']['items']
-#     items_length = len(items)
-#     # read json file
-#     with open(json_file) as json_file:
-#         data = json.load(json_file)
-#     words_times = {}
-#     # get the transcript
-#     for i in range(items_length):
-#         if items[i]['type'] == 'pronunciation':
-#             word = items[i]['alternatives'][0]['content']
-#             start_time = math.floor(items[i]['start_time'])
-#             words_times[start_time[i]] = word
-#     return words_times
-
-# # takes in the
-# def get_timestamp_words():
-#     transcript = data['results']['transcripts'][0]['transcript']
-#     items = data['results']['items']
-#     items_length = len(items)
-#     for i in range(items_length):
-#         if items[i]['type'] == 'pronunciation':
-#             word = items[i]['alternatives'][0]['content']
-#             start_time = math.floor(items[i]['start_time'])
-
 
 def get_transcript_words(full_transcript, i):
     transcript_words = []
-    for item in full_transcript["results"]["items"]:
-        try:
-            if item["start_time"] < i and item["start_time"] < i + 1:
-                transcript_words.append(item["alternatives"]["content"])
-        except:
+    items = full_transcript["results"]["items"]
+    for item in items:
+        print("hello")
+        if item["type"] == "pronunciation":
+            start_time = float(item["start_time"])
+            if start_time > i and start_time < i + 1:
+                transcript_words.append(item["alternatives"][0]["content"])
+        else:
             pass
     return transcript_words
 
@@ -67,9 +43,9 @@ def get_timeline(transcript_timeline):
     for i in transcript_timeline.keys():
         transcript_words = get_transcript_words(transcript_json, i)
         transcript_timeline[i] = transcript_words
-    return transcript_timeline[i]
+    return transcript_timeline
 
-print(get_timeline({0: "face", 1: "face", 2: "face"}))
+print(get_timeline({0: "face", 1: "face", 2: "face", 3: "face", 4: "face", 5: "face", 6: "face", 7: "face", 8: "face", 9: "face", 10: "face", 11: "face", 12: "face", 13: "face", 14: "face", 15: "face"}))
 
 
 def transcribe_file(job_name, file_uri, transcribe_client):
@@ -218,4 +194,4 @@ def get_timestamps_convos(json_file):
 
 # LOG: still getting four different time separations even tho there should be 3
 
-print(get_timestamps('asrOutputShort.json'))
+# print(get_timestamps_convos('asrOutputShort.json'))
